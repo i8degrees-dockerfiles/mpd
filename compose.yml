@@ -1,0 +1,106 @@
+# 1. https://github.com/ampache/ampache-docker
+---
+#version: "3.3"
+
+networks:
+  traefik-proxy:
+    driver: overlay
+    attachable: true
+    external: true
+
+volumes:
+  ampache_config:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=fs1-san.home,nolock,soft,ro
+      device: :/mnt/fs1/Applications/mpd-1/mounts/config/ampache
+  mpd_config:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=fs1-san.home,nolock,soft,ro
+      device: :/mnt/fs1/Applications/mpd-1/mounts/config/mpd
+  # shared
+  playlists:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=fs1-san.home,nolock,soft,rw
+      device: :/mnt/fs1/Music/playlists
+  # shared
+  music:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=fs1-san.home,nolock,soft,rw
+      device: :/mnt/fs1/Music
+  # mpd
+  mpd_database:
+    external: false
+  # ampache
+  mysql_db:
+    external: false
+
+services:
+  mpd:
+    restart: unless-stopped
+    image: "giof71/mpd-alsa:latest"
+    container_name: "mpd-1"
+    # ALSA
+    devices:
+      - /dev/snd
+    ports:
+      - "6600:6600"
+    env_file:
+      - ./.env
+    volumes:
+      # bind mounts
+      - /etc/localtime:/etc/localtime:ro
+      - ./mounts/logs/mpd:/log:rw
+      # volumes
+      - mpd_config:/user/config:ro
+      - mpd_database:/db:rw
+      - music:/music
+      - playlists:/playlists
+    networks:
+      - traefik-proxy
+    cpu_count: 1
+    mem_limit: 512M
+    labels:
+      - "traefik.enable=false"
+      - "homepage.group=syn"
+      - "homepage.name=mpd"
+
+  ampache:
+    depends_on:
+      - mpd
+    restart: unless-stopped
+    image: ampache/ampache:6.3.1
+    container_name: "ampache-1"
+    ports:
+      - "9700:80/tcp"
+    volumes:
+      # bind mounts
+      - /etc/localtime:/etc/localtime:ro
+      - ./mounts/logs/ampache:/var/log/ampache:rw
+      # volume mounts
+      - ampache_config:/var/www/config:ro
+      - mysql_db:/var/lib/mysql:rw
+      - music:/media:nocopy,ro
+    env_file:
+      - "./.env"
+    networks:
+      - traefik-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ampache.rule=Host(`music.fs1.home`) && PathPrefix(`/`)"
+      - "traefik.http.routers.ampache.entrypoints=websecure"
+      - "traefik.http.services.ampache.loadbalancer.server.port=80"
+      - "traefik.http.routers.ampache.service=ampache"
+      - "traefik.http.routers.ampache.tls.certresolver=staging-web-acme"
+      - "homepage.group=syn"
+      - "homepage.name=ampache"
+      - "homepage.href=https://music.fs1.home"
+    cpu_count: 1
+    mem_limit: 512M

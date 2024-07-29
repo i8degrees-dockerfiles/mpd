@@ -1,0 +1,10 @@
+# symbolic links
+mpd.log
+scrobble.log
+
+.env.secrets
+!.env
+!.env.dist
+
+mounts/logs/*
+

@@ -44,7 +44,7 @@ volumes:
 
 services:
   mpd:
-    restart: unless-stopped
+    restart: always
     image: "giof71/mpd-alsa:latest"
     container_name: "mpd-1"
     # ALSA

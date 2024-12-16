@@ -9,25 +9,6 @@ networks:
     external: true
 
 volumes:
-  ampache_config:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=fs1-san.home,nolock,soft,ro
-      device: :/mnt/fs1/Applications/mpd-1/mounts/config/ampache
-  mpd_config:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=fs1-san.home,nolock,soft,ro
-      device: :/mnt/fs1/Applications/mpd-1/mounts/config/mpd
-  # shared
-  playlists:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=fs1-san.home,nolock,soft,rw
-      device: :/mnt/fs1/Music/playlists
   # shared
   music:
     driver: local
@@ -58,11 +39,10 @@ services:
       # bind mounts
       - /etc/localtime:/etc/localtime:ro
       - ./mounts/logs/mpd:/log:rw
+      - ./mounts/config/mpd:/user/config:rw
       # volumes
-      - mpd_config:/user/config:ro
       - mpd_database:/db:rw
-      - music:/music
-      - playlists:/playlists
+      - music:/music:rw # playlists are at /music/playlists
     networks:
       - traefik-proxy
     cpu_count: 1
@@ -84,10 +64,10 @@ services:
       # bind mounts
       - /etc/localtime:/etc/localtime:ro
       - ./mounts/logs/ampache:/var/log/ampache:rw
+      - ./mounts/config/ampache:/var/www/config:rw
       # volume mounts
-      - ampache_config:/var/www/config:ro
       - mysql_db:/var/lib/mysql:rw
-      - music:/media:nocopy,ro
+      - music:/media:nocopy,ro # playlists are at /media/playlists
     env_file:
       - "./.env"
     networks:

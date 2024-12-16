@@ -6,5 +6,8 @@ scrobble.log
 !.env
 !.env.dist
 
+!mounts/config/ampache/.placeholder
+!mounts/config/mpd/.placeholder
 mounts/logs/*
+!mounts/logs/.placeholder
 

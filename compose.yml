@@ -45,7 +45,7 @@ services:
       - music:/music:rw # playlists are at /music/playlists
     networks:
       - traefik-proxy
-    cpu_count: 1
+    cpus: 0.5
     mem_limit: 512M
     labels:
       - "traefik.enable=false"
@@ -82,5 +82,5 @@ services:
       - "homepage.group=syn"
       - "homepage.name=ampache"
       - "homepage.href=https://music.fs1.home"
-    cpu_count: 1
-    mem_limit: 512M
+    cpus: 0.5
+    mem_limit: 256M

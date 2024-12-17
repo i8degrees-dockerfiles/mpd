@@ -12,10 +12,12 @@ volumes:
   # shared
   music:
     driver: local
+    # FIXME(JEFF): NFS v3 is being used for this share, no matter what options
+    # I have tried here.
     driver_opts:
       type: nfs
-      o: addr=fs1-san.home,nolock,soft,rw
-      device: :/mnt/fs1/Music
+      o: addr=fs1-san.home,nolock,soft,rw,vers=4
+      device: :/mnt/npool0/smb/Music
   # mpd
   mpd_database:
     external: false

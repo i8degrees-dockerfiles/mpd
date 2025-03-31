@@ -9,11 +9,18 @@ networks:
     external: true
 
 volumes:
-  # shared
+  # shared mountpoint via NFS
+  #
+  # FIXME(JEFF): I cannot convince Docker to use NFSv4 -- it
+  # I would love to find an answer for this!
+  #
+  # FIXME(JEFF): We cannot use this volume until we figure
+  # out how to tell Docker to continue running the container
+  # even if the connection here errors out. I believe that
+  # we ought to consider looking at other options, such
+  # as rclone.
   music:
     driver: local
-    # FIXME(JEFF): NFS v3 is being used for this share, no matter what options
-    # I have tried here.
     driver_opts:
       type: nfs
       o: addr=fs1-san.home,nolock,soft,rw,vers=4
@@ -36,7 +43,7 @@ services:
     ports:
       - "6600:6600"
     env_file:
-      - ./.env
+      - .env
     volumes:
       # bind mounts
       - /etc/localtime:/etc/localtime:ro
@@ -44,7 +51,9 @@ services:
       - ./mounts/config/mpd:/user/config:rw
       # volumes
       - mpd_database:/db:rw
-      - music:/music:rw # playlists are at /music/playlists
+      # playlists are at /music/playlists
+      - /mnt/fs1/Music:/music:rw
+      #- music:/music:rw
     networks:
       - traefik-proxy
     cpus: 0.5
@@ -69,9 +78,11 @@ services:
       - ./mounts/config/ampache:/var/www/config:rw
       # volume mounts
       - mysql_db:/var/lib/mysql:rw
-      - music:/media:nocopy,ro # playlists are at /media/playlists
+      # playlists are at /media/playlists
+      - /mnt/fs1/Music:/media:ro
+      #- music:/media:nocopy,ro 
     env_file:
-      - "./.env"
+      - .env
     networks:
       - traefik-proxy
     labels:
